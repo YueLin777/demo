@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 命名空间，绑定一个对应的 dao接口-->
+<mapper namespace="com.mind.contract.dao.ContractDao">
+    <select id="selectCount" resultType="java.lang.Integer">
+        select count(1) from total where contractId=#{contractId}
+    </select>
+
+    <insert id="write" parameterType="contract">
+        insert into total
+           (contractId,company,date,supplier,material,contract_amount,payment1,payment2,payment3,payment4,corresponding_item,tax_rate,classification,remark1)
+        values
+           (#{contractId},#{company},#{date},#{supplier},#{material},#{contract_amount},#{payment1},#{payment2},#{payment3},#{payment4},#{corresponding_item},#{tax_rate},#{classification},#{remark1})
+    </insert>
+
+    <select id="selectContractOld" resultType="java.lang.String">
+        select contractId from total where id = #{id}
+    </select>
+
+    <update id="update" parameterType="contract">
+        update total
+        set
+        contractId=#{contractId},
+        company=#{company},
+        date=#{date},
+        supplier=#{supplier},
+        material=#{material},
+        contract_amount=#{contract_amount},
+        payment1=#{payment1},
+        payment2=#{payment2},
+        payment3=#{payment3},
+        payment4=#{payment4},
+        corresponding_item=#{corresponding_item},
+        person_in_charge=#{person_in_charge},
+        tax_rate=#{tax_rate},
+        classification=#{classification},
+        remark1=#{remark1},
+        has_file=#{has_file}
+        where
+          id=#{id}
+    </update>
+    
+    <delete id="delpurchase" parameterType="java.lang.String">
+        delete from total where contractId=#{contractId}
+    </delete>
+
+    <update id="computingPaid" parameterType="contract">
+        UPDATE total
+        SET paid = payment1 + payment2 + payment3 + payment4
+        WHERE contractId =#{contractId};
+    </update>
+
+    <update id="computingRemain" parameterType="contract">
+        UPDATE total
+        SET remain_paid = contract_amount - paid
+        WHERE contractId =#{contractId};
+    </update>
+
+    <update id="computing">
+        UPDATE total t
+        JOIN (
+        SELECT
+        SUBSTRING_INDEX(invoice_belongs_to_the_contract_order, '-', 1) AS contractId,
+        SUM(total_amount) AS total_received_amount
+        FROM invoice
+        GROUP BY SUBSTRING_INDEX(invoice_belongs_to_the_contract_order, '-', 1)
+        ) AS invoice_sums
+        ON t.contractId = invoice_sums.contractId
+        SET t.ticket_amount_received = invoice_sums.total_received_amount
+    </update>
+
+    <update id="computingNot" parameterType="contract">
+        update total
+        set ticket_amount_not_collected = contract_amount - ticket_amount_received
+        where contractId =#{contractId}
+    </update>
+
+    <update id="updateTicketAmountReceived">
+        update total
+        set ticket_amount_not_collected = contract_amount - ticket_amount_received
+        where contractId in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="selectOrder" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM invoice
+        WHERE invoice_code = #{invoice_code} AND invoice_number = #{invoice_number}
+    </select>
+
+    <insert id="writeInvoice" parameterType="invoice">
+        insert into invoice
+        (invoice_belongs_to_the_contract_order,date_of_drawing,date_received,invoice_title,invoice_type,invoice_code,invoice_number,billing_company,content,total_amount,tax_rate,billing_source,accounting_year,accounting_month,remark2)
+        values
+        (#{invoice_belongs_to_the_contract_order},#{date_of_drawing},#{date_received},#{invoice_title},#{invoice_type},#{invoice_code},#{invoice_number},#{billing_company},#{content},#{total_amount},#{tax_rate},#{billing_source},#{accounting_year},#{accounting_month},#{remark2})
+    </insert>
+
+    <update id="calculate_amount" parameterType="invoice">
+        update invoice
+        set tax_not_included = total_amount / (1 + tax_rate*0.01)
+        where invoice_code = #{invoice_code} AND invoice_number = #{invoice_number}
+    </update>
+
+    <update id="calculate_no_amount" parameterType="invoice">
+        update invoice
+        set amount_of_tax_payable = total_amount - tax_not_included
+        where invoice_code = #{invoice_code} AND invoice_number = #{invoice_number}
+    </update>
+
+    <update id="updateInvoice" parameterType="invoice">
+        update invoice
+        set
+        invoice_belongs_to_the_contract_order=#{invoice.invoice_belongs_to_the_contract_order},
+        date_of_drawing=#{invoice.date_of_drawing},
+        date_received=#{invoice.date_received},
+        invoice_title=#{invoice.invoice_title},
+        invoice_type=#{invoice.invoice_type},
+        billing_company=#{invoice.billing_company},
+        content=#{invoice.content},
+        total_amount=#{invoice.total_amount},
+        tax_rate=#{invoice.tax_rate},
+        billing_source=#{invoice.billing_source},
+        accounting_year=#{invoice.accounting_year},
+        accounting_month=#{invoice.accounting_month},
+        remark2=#{invoice.remark2}
+        where invoice_code = #{invoice.invoice_code} AND invoice_number = #{invoice.invoice_number}
+    </update>
+
+    <delete id="delinvoice" parameterType="java.lang.String">
+        delete from invoice where invoice_code = #{invoice_code} AND invoice_number = #{invoice_number}
+    </delete>
+
+    <select id="queryInvice" resultType="invoice" parameterType="java.lang.String">
+        select invoice_belongs_to_the_contract_order,total_amount from invoice where invoice_code = #{invoiceCode} AND invoice_number = #{invoiceNumber}
+    </select>
+
+    <select id="queryContract" resultType="contract" parameterType="java.lang.String">
+        select * from total where contractId = #{contractId}
+    </select>
+
+    <update id="updateContract" parameterType="contract">
+        update total
+        set
+        ticket_amount_received=#{ticket_amount_received},
+        ticket_amount_not_collected=#{ticket_amount_not_collected}
+        where
+        contractId=#{contractId}
+    </update>
+
+    <update id="updatestatement" parameterType="contract">
+        update total
+        set
+        account=#{account},
+        income_date=#{income_date},
+        date_of_expenditure=#{date_of_expenditure},
+        income=#{income},
+        disburse=#{disburse},
+        way=#{way},
+        current_name=#{current_name},
+        good=#{good},
+        state=#{state},
+        type=#{type},
+        item=#{item},
+        balance=#{balance},
+        remark3=#{remark3}
+        where
+        contractId=#{contractId}
+    </update>
+
+    <select id="findCountByContractId" resultType="java.lang.Integer">
+        SELECT count(1) FROM
+        (select * from total where contractId like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where corresponding_item like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where company like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where date like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where supplier like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where material like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where contract_amount like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where person_in_charge like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where ticket_amount_received like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where ticket_amount_not_collected like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where tax_rate like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where classification like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where remark1 like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        (select * from total
+        <where>
+            <if test="query.corresponding_itemFuzzy==0">
+                remain_paid=#{query.corresponding_itemFuzzy}
+            </if>
+            <if test="query.corresponding_itemFuzzy > 0">
+                remain_paid &gt;=#{query.corresponding_itemFuzzy}
+            </if>
+        </where>)
+        ) t
+    </select>
+
+    <select id="selectListContract" resultType="contract">
+        select t.* from
+        (select * from total where contractId like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where corresponding_item like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where company like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where date like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where supplier like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where material like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where contract_amount like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where person_in_charge like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where ticket_amount_received like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where ticket_amount_not_collected like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where tax_rate like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where classification like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        select * from total where remark1 like binary concat('%',#{query.contractIdFuzzy},'%')
+        union
+        (select * from total
+        <where>
+            <if test="query.corresponding_itemFuzzy==0">
+                remain_paid=#{query.corresponding_itemFuzzy}
+            </if>
+            <if test="query.corresponding_itemFuzzy > 0">
+                remain_paid &gt;=#{query.corresponding_itemFuzzy}
+            </if>
+        </where>)
+        ) t
+        order by t.id
+        limit #{query.simplePage.start},#{query.simplePage.pageSize}
+    </select>
+
+    <select id="findCountByInvoiceId" resultType="java.lang.Integer">
+        select count(1) from
+        (select * from invoice where invoice_belongs_to_the_contract_order like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where date_of_drawing like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where date_received like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where invoice_title like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where invoice_code like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where invoice_number like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where billing_company like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where content like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where total_amount like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where tax_rate like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where tax_not_included like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where amount_of_tax_payable like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where billing_source like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where accounting_year like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where accounting_month like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        (select * from invoice
+        <where>
+            <if test="query.invoice_codeFuzzy!=null and query.invoice_codeFuzzy!=''">
+                remark2 like binary concat('%',#{query.invoice_codeFuzzy},'%')
+            </if>
+        </where>)
+        ) i
+    </select>
+
+    <select id="findListByInvoiceId" resultType="invoice">
+        select i.* from
+        (select * from invoice where invoice_belongs_to_the_contract_order like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where date_of_drawing like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where date_received like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where invoice_title like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where invoice_code like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where invoice_type like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where invoice_number like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where billing_company like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where content like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where total_amount like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where tax_rate like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where tax_not_included like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where amount_of_tax_payable like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where billing_source like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where accounting_year like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        select * from invoice where accounting_month like binary concat('%',#{query.invoice_codeFuzzy},'%')
+        UNION
+        (select * from invoice
+        <where>
+            <if test="query.invoice_codeFuzzy!=null and query.invoice_codeFuzzy!=''">
+                remark2 like binary concat('%',#{query.invoice_codeFuzzy},'%')
+            </if>
+        </where>)
+        ) i
+        ORDER BY date_received
+        limit #{query.simplePage.start},#{query.simplePage.pageSize}
+    </select>
+
+    <select id="selectStatementId" resultType="java.lang.Integer">
+        select count(1) from statement where `order`=#{order}
+    </select>
+
+    <select id="selectStatementOld" resultType="java.lang.String">
+        select `order` from statement where id=#{id}
+    </select>
+
+    <insert id="write_statement" parameterType="statement">
+        insert into statement
+        (account, date, income, disburse, way, current_name,`order`, good, state, type, item, classification,remark3,person)
+        values
+        (#{account},#{date},#{income},#{disburse},#{way},#{current_name},#{order},#{good},#{state},#{type},#{item},#{classification}, #{remark3},#{person})
+    </insert>
+
+    <update id="calculate_balance" parameterType="statement">
+        update statement
+        SET balance = (income - disburse);
+    </update>
+
+    <update id="modify_statement" parameterType="statement">
+        update statement
+        set
+        account = #{account},
+        date = #{date},
+        income =#{income},
+        disburse =#{disburse},
+        way = #{way},
+        current_name = #{current_name},
+        `order` = #{order},
+        good =#{good},
+        state =#{state},
+        type =#{type},
+        item = #{item},
+        classification = #{classification},
+        person = #{person},
+        remark3 =#{remark3}
+        where
+          id =#{id}
+    </update>
+
+    <delete id="del_statement" parameterType="java.lang.Integer">
+        delete from statement where id = #{id}
+    </delete>
+
+    <select id="findCountId" resultType="java.lang.Integer">
+        select count(1) from
+        (select * from statement where account like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where date like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where income like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where disburse like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where way like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where current_name like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where `order` like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where good like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where state like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where type like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where item like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where balance like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where classification like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where person like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        (select * from statement
+        <where>
+            <if test="query.itemFuzzy!=null and query.itemFuzzy!=''">
+                remark3 like binary concat('%',#{query.itemFuzzy},'%')
+            </if>
+        </where>)
+        ) s
+    </select>
+
+    <select id="findListId" resultType="statement">
+        select s.* from
+        (select * from statement where account like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where date like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where income like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where disburse like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where way like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where current_name like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where `order` like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where good like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where state like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where type like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where item like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where balance like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where classification like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        select * from statement where person like binary concat('%',#{query.itemFuzzy},'%')
+        UNION
+        (select * from statement
+        <where>
+            <if test="query.itemFuzzy!=null and query.itemFuzzy!=''">
+                remark3 like binary concat('%',#{query.itemFuzzy},'%')
+            </if>
+        </where>)
+        ) s
+        ORDER BY s.id
+        limit #{query.simplePage.start},#{query.simplePage.pageSize}
+    </select>
+
+    <select id="accountSum" resultType="accountSum">
+        select
+        account,
+        sum(balance) as totalBalance
+        from statement
+        group by account
+    </select>
+
+    <select id="selectAllContract" resultType="contract">
+        select * from total
+    </select>
+
+    <select id="selectById" resultType="com.mind.contract.entity.pojo.Contract">
+        select * from total where contractId = #{contractId}
+    </select>
+
+    <select id="selectSid" resultType="invoice">
+        select * from invoice where invoice_code = #{invoice_code} AND invoice_number = #{invoice_number}
+    </select>
+
+    <update id="updateInvoiceFile" parameterType="invoice">
+        update invoice
+        set
+        has_file=#{has_file}
+        where invoice_code = #{invoice_code} AND invoice_number = #{invoice_number}
+    </update>
+
+    <select id="getSumTicket" resultType="java.lang.Double">
+        SELECT
+        SUM(total_amount) AS total_received_amount
+        FROM invoice
+        where invoice_belongs_to_the_contract_order like concat(#{contractId},'%')
+    </select>
+
+    <insert id="insertContractList">
+        INSERT INTO total
+        (contractId,company,date,supplier,material,contract_amount,
+        payment1,payment2,payment3,payment4,paid,remain_paid,corresponding_item,person_in_charge,
+        ticket_amount_received,ticket_amount_not_collected,tax_rate,classification,remark1)
+        VALUES
+        <foreach collection="data" item="item" separator=",">
+            (#{item.contractId},#{item.company},#{item.date},#{item.supplier},#{item.material},#{item.contract_amount},
+            #{item.payment1},#{item.payment2},#{item.payment3},#{item.payment4},#{item.paid},#{item.remain_paid},#{item.corresponding_item},
+            #{item.person_in_charge},#{item.ticket_amount_received},#{item.ticket_amount_not_collected},#{item.tax_rate},
+            #{item.classification},#{item.remark1})
+        </foreach>
+    </insert>
+
+</mapper>

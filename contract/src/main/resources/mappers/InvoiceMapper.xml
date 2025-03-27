@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 命名空间，绑定一个对应的 dao接口-->
+<mapper namespace="com.mind.contract.dao.InvoiceDao">
+    <select id="selectAllInvoice" resultType="invoice">
+        select * from invoice
+    </select>
+
+    <select id="timeSum" resultType="java.util.Map">
+        select
+        invoice_type AS invoiceType,
+        sum(total_amount) AS totalAmount,
+        sum(amount_of_tax_payable) AS amount,
+        sum(tax_not_included) AS notAmount
+        from
+        invoice
+        where accounting_year = #{year} AND accounting_month = #{month}
+        GROUP BY
+        invoice_type
+    </select>
+
+    <insert id="insertInvoiceList">
+        INSERT INTO invoice
+        (invoice_belongs_to_the_contract_order,date_of_drawing,date_received,invoice_title,
+        invoice_type,invoice_code,invoice_number,billing_company,content,total_amount,tax_rate,
+        tax_not_included,amount_of_tax_payable,billing_source,accounting_year,accounting_month,remark2)
+        VALUES
+        <foreach collection="data" item="item" separator=",">
+            (#{item.invoice_belongs_to_the_contract_order},#{item.date_of_drawing},#{item.date_received},
+            #{item.invoice_title},#{item.invoice_type},#{item.invoice_code},#{item.invoice_number},
+            #{item.billing_company},#{item.content},#{item.total_amount},#{item.tax_rate},#{item.tax_not_included},
+            #{item.amount_of_tax_payable},#{item.billing_source},#{item.accounting_year},#{item.accounting_month},#{item.remark2})
+        </foreach>
+    </insert>
+
+</mapper>

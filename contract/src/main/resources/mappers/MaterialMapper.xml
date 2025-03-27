@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 命名空间，绑定一个对应的 dao接口-->
+<mapper namespace="com.mind.contract.dao.MaterialDao">
+    <insert id="material" parameterType="material">
+        insert into material
+        (date,way,suppliers,name,model,number,money,taxRate,taxNotAmount,taxAmount,project,person,remark)
+        values
+        (#{date},#{way},#{suppliers},#{name},#{model},#{number},#{money},#{taxRate},#{taxNotAmount},#{taxAmount},#{project},#{person},#{remark})
+    </insert>
+
+    <update id="calculateNotAmount" parameterType="material">
+        update material
+        set taxNotAmount = money / (1 + taxRate*0.01)
+        where id=#{id}
+    </update>
+
+    <update id="calculateAmount" parameterType="material">
+        update material
+        set taxAmount = money - taxNotAmount
+        where id=#{id}
+    </update>
+
+    <update id="modifyMaterial" parameterType="material">
+        update material
+        set
+        date=#{date},
+        way=#{way},
+        suppliers=#{suppliers},
+        name=#{name},
+        model=#{model},
+        number=#{number},
+        money=#{money},
+        taxRate=#{taxRate},
+        project=#{project},
+        person=#{person},
+        remark=#{remark}
+        where
+        id=#{id}
+    </update>
+
+    <select id="count" resultType="java.lang.Integer">
+        select count(1) from material where id =#{id}
+    </select>
+
+    <delete id="delMaterial" parameterType="java.lang.Integer">
+        delete from material where id=#{id}
+    </delete>
+
+    <select id="findCountById" resultType="java.lang.Integer">
+        SELECT count(1) FROM
+        (select * from material where date like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where way like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where suppliers like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where name like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where model like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where number like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where money like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where project like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where person like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        (select * from material
+        <where>
+            <if test="query.projectFuzzy!=null and query.projectFuzzy!=''">
+                remark like binary concat('%',#{query.projectFuzzy},'%')
+            </if>
+        </where>)
+        ) m
+    </select>
+
+    <select id="findListMaterial" resultType="material">
+        select m.* from
+        (select * from material where date like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where way like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where suppliers like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where name like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where model like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where number like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where money like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where project like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        select * from material where person like binary concat('%',#{query.projectFuzzy},'%')
+        UNION
+        (select * from material
+        <where>
+            <if test="query.projectFuzzy!=null and query.projectFuzzy!=''">
+                remark like binary concat('%',#{query.projectFuzzy},'%')
+            </if>
+        </where>)
+        ) m
+        ORDER BY m.id
+        limit #{query.simplePage.start},#{query.simplePage.pageSize}
+    </select>
+
+    <select id="materialExportList" resultType="material">
+        select date,way,suppliers,name,model,number,money,project,person,remark from material
+    </select>
+
+    <select id="itemSum" resultType="java.util.Map">
+        SELECT
+        m.project AS item,
+        SUM(m.money) AS totalAmount,
+        COALESCE(s.totalDisburse, 0) AS totalDisburse
+        FROM
+        material m
+        LEFT JOIN (
+        SELECT
+        item,
+        COALESCE(SUM(disburse), 0) AS totalDisburse
+        FROM
+        statement
+        GROUP BY
+        item
+        ) s ON m.project = s.item
+        WHERE
+        m.project = #{project}
+        GROUP BY
+        m.project, COALESCE(s.totalDisburse, 0);
+    </select>
+
+    <insert id="insertMaterialList">
+        insert into material
+        (date,way,suppliers,name,model,number,money,taxRate,taxNotAmount,taxAmount,project,person,remark)
+        values
+        <foreach collection="data" item="item" separator=",">
+            (#{item.date},#{item.way},#{item.suppliers},#{item.name},#{item.model},#{item.number},#{item.money},#{item.taxRate}
+            ,#{item.taxNotAmount},#{item.taxAmount},#{item.project},#{item.person},#{item.remark})
+        </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 命名空间，绑定一个对应的 dao接口-->
+<mapper namespace="com.mind.contract.dao.SellDao">
+    <select id="count" resultType="java.lang.Integer">
+       select count(1) from sell where id = #{id}
+   </select>
+
+    <select id="repeat" resultType="java.lang.Integer">
+        select count(1) from sell where contractId=#{contractId}
+    </select>
+
+    <insert id="sell" parameterType="sell">
+        insert into sell
+        (contractId,company,date,seal,file,person,customer,money,billingStatus,deliveryStatus,product,detail,collection1,collection2,collection3,collection4,state,remark)
+        values
+        (#{contractId},#{company},#{date},#{seal},#{file},#{person},#{customer},#{money},#{billingStatus},#{deliveryStatus},#{product},#{detail},#{collection1},#{collection2},#{collection3},#{collection4},#{state},#{remark})
+    </insert>
+
+    <select id="selectOld" resultType="java.lang.String">
+        select contractId from sell where id = #{id}
+    </select>
+
+    <update id="calculateCollection" parameterType="sell">
+        update sell
+        set receivedCollection = collection1 + collection2 + collection3 + collection4
+        where contractId = #{contractId}
+    </update>
+
+    <update id="calculateNoCollection" parameterType="sell">
+        update sell
+        set residualCollection = money - receivedCollection
+        where contractId = #{contractId}
+    </update>
+
+    <update id="calculateInvoiced" parameterType="sell">
+        UPDATE sell s
+        JOIN (
+        SELECT
+        SUBSTRING_INDEX(contractId, '-', 1) AS id,
+        SUM(invoiceAmount) AS total_received_amount
+        FROM sellinvoice
+        GROUP BY SUBSTRING_INDEX(contractId, '-', 1)
+        ) AS invoice_sums
+        ON s.contractId = invoice_sums.id
+        SET s.invoicedAmount = invoice_sums.total_received_amount
+    </update>
+
+    <update id="calculateNoInvoiced" parameterType="sell">
+        update sell
+        set invoiceNotAmount = money - invoicedAmount
+        where contractId = #{contractId}
+    </update>
+
+    <update id="modifySell" parameterType="sell">
+        update sell
+        set
+        contractId=#{contractId},
+        company=#{company},
+        date=#{date},
+        seal=#{seal},
+        file=#{file},
+        person=#{person},
+        customer=#{customer},
+        money=#{money},
+        billingStatus=#{billingStatus},
+        deliveryStatus=#{deliveryStatus},
+        product=#{product},
+        detail=#{detail},
+        collection1=#{collection1},
+        collection2=#{collection2},
+        collection3=#{collection3},
+        collection4=#{collection4},
+        state=#{state},
+        remark=#{remark}
+        where
+        id=#{id}
+    </update>
+
+    <delete id="delSell" parameterType="java.lang.Integer">
+        delete from sell where id=#{id}
+    </delete>
+
+    <select id="findCountById" resultType="java.lang.Integer">
+        SELECT count(1) FROM
+        (select * from sell where contractId like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where date like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where company like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where seal like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where file like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where person like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where customer like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where money like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where billingStatus like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where deliveryStatus like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where invoicedAmount like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where invoiceNotAmount like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where product like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where detail like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where state like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where remark like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        (
+        select * from sell
+        <where>
+            <if test="query.residualCollectionFuzzy==0">
+                residualCollection=#{query.residualCollectionFuzzy}
+            </if>
+            <if test="query.residualCollectionFuzzy > 0">
+                residualCollection &gt;=#{query.residualCollectionFuzzy}
+            </if>
+        </where>)
+        ) s
+    </select>
+
+    <select id="findListSell" resultType="sell">
+        select s.* from
+        (select * from sell where contractId like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where date like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where company like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where seal like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where file like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where person like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where customer like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where money like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where billingStatus like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where deliveryStatus like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where invoicedAmount like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where invoiceNotAmount like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where product like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where detail like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where state like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        select * from sell where remark like binary concat('%',#{query.contractIdFuzzy},'%')
+        UNION
+        (
+        select * from sell
+        <where>
+            <if test="query.residualCollectionFuzzy==0">
+                residualCollection=#{query.residualCollectionFuzzy}
+            </if>
+            <if test="query.residualCollectionFuzzy > 0">
+                residualCollection &gt;=#{query.residualCollectionFuzzy}
+            </if>
+        </where>)
+        ) s
+        ORDER BY s.id
+        limit #{query.simplePage.start},#{query.simplePage.pageSize}
+    </select>
+
+    <select id="sellExportList" resultType="sell">
+        select contractId,company,date,seal,file,person,customer,money,billingStatus,deliveryStatus,invoicedAmount,invoiceNotAmount,product,detail,collection1,collection2,collection3,collection4,receivedCollection,residualCollection,state,remark from sell
+    </select>
+
+    <select id="selectSid" resultType="sell">
+        select * from sell where id = #{id}
+    </select>
+
+    <update id="updateSell" parameterType="sell">
+        update sell
+        set
+        has_file=#{has_file}
+        where
+        id =#{id}
+    </update>
+
+    <select id="getSumTicket" resultType="java.lang.Double">
+        select
+        SUM(invoiceAmount) AS total_received_amount
+        from sellinvoice
+        where contractId like concat(#{contractId},'%')
+    </select>
+
+    <insert id="insertSellList">
+        insert into sell
+        (contractId,company,date,seal,file,person,customer,money,billingStatus,deliveryStatus,invoicedAmount,invoiceNotAmount,product,detail,
+        collection1,collection2,collection3,collection4,receivedCollection,residualCollection,state,remark)
+        values
+        <foreach collection="data" item="item" separator=",">
+            (#{item.contractId},#{item.company},#{item.date},#{item.seal},#{item.file},#{item.person},#{item.customer},
+            #{item.money},#{item.billingStatus},#{item.deliveryStatus},#{item.invoicedAmount},#{item.invoiceNotAmount},
+            #{item.product},#{item.detail},#{item.collection1},
+            #{item.collection2},#{item.collection3},#{item.collection4},#{item.receivedCollection},#{item.residualCollection},
+            #{item.state},#{item.remark})
+        </foreach>
+    </insert>
+</mapper>

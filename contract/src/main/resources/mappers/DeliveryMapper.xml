@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 命名空间，绑定一个对应的 dao接口-->
+<mapper namespace="com.mind.contract.dao.DeliveryDao">
+    <insert id="delivery" parameterType="delivery">
+        insert into delivery
+        (date,name,contractId,good)
+        values
+        (#{date},#{name},#{contractId},#{good})
+    </insert>
+
+    <update id="modifyDelivery" parameterType="delivery">
+        update delivery
+        set
+        date=#{date},
+        name=#{name},
+        contractId=#{contractId},
+        good=#{good},
+        has_file=#{has_file}
+        where id = #{id}
+    </update>
+
+    <select id="count" parameterType="java.lang.Integer">
+        select count(1) from delivery where id=#{id}
+    </select>
+
+    <delete id="delDelivery" parameterType="java.lang.Integer">
+        delete from delivery where id =#{id}
+    </delete>
+
+    <select id="findCount" resultType="java.lang.Integer">
+        select count(1) from
+        (select * from delivery where date like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        select * from delivery where name like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        select * from delivery where contractId like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        (select * from delivery
+        <where>
+            <if test="query.fuzzy!=null and query.fuzzy!=''">
+                good like binary concat('%',#{query.fuzzy},'%')
+            </if>
+        </where>)
+        ) d
+    </select>
+
+    <select id="findList" resultType="delivery">
+        select * from
+        (select * from delivery where date like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        select * from delivery where name like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        select * from delivery where contractId like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        (select * from delivery
+        <where>
+            <if test="query.fuzzy!=null and query.fuzzy!=''">
+                good like binary concat('%',#{query.fuzzy},'%')
+            </if>
+        </where>)
+        ) d
+        ORDER BY d.id
+        limit #{query.simplePage.start},#{query.simplePage.pageSize}
+    </select>
+
+    <select id="selectId" resultType="delivery">
+        select * from delivery where id = #{id}
+    </select>
+
+    <select id="selectAllDelivery"  resultType="delivery">
+        select * from delivery
+    </select>
+
+    <insert id="uploadDeliveryExcel">
+        insert into delivery
+        (date,name,contractId,good)
+        values
+        <foreach collection="data" item="item" separator=",">
+            (#{item.date},#{item.name},#{item.contractId},#{item.good})
+        </foreach>
+    </insert>
+</mapper>

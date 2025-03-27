@@ -1,0 +1,34 @@
+server:
+  port: 9098
+  servlet:
+    context-path: /api
+
+spring:
+  servlet:
+    multipart:
+      # 单个文件大小
+      max-file-size: 50MB
+      # 设置总上传的文件大小
+      max-request-size: 50MB
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/contract?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=GMT%2B8
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+# mybatis
+mybatis:
+  type-aliases-package: com.mind.contract.entity.pojo
+  mapper-locations: classpath:mappers/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+file:
+  save:
+    path: C:\Users\ASUS\Desktop\contra\contract\contract\src\main\resources\file
+    zpPath: /opt/zp
+    xsPath: /opt/xs
+    xsfpPath: /opt/xsfp
+    hdPath: /opt/hd
+    wdPth: /opt/wd

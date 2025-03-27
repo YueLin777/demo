@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 命名空间，绑定一个对应的 dao接口-->
+<mapper namespace="com.mind.contract.dao.StatementDao">
+    <select id="selectAllStatement" resultType="statement">
+        select * from statement
+    </select>
+
+    <insert id="insertStatementList">
+        insert into statement
+        (account, date, income, disburse, way, current_name,`order`, good, state, type, item,balance, classification,remark3,person)
+        values
+        <foreach collection="date" item="item" separator=",">
+            (#{item.account},#{item.date},#{item.income},#{item.disburse},#{item.way},#{item.current_name},#{item.order},#{item.good},#{item.state},#{item.type},#{item.item},#{item.balance},#{item.classification}, #{item.remark3},#{item.person})
+        </foreach>
+    </insert>
+</mapper>

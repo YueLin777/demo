@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 命名空间，绑定一个对应的 dao接口-->
+<mapper namespace="com.mind.contract.dao.AcceptanceDao">
+    <insert id="acceptance" parameterType="acceptance">
+        insert into acceptance
+        (date,customer,name,type)
+        values
+        (#{date},#{customer},#{name},#{type})
+    </insert>
+
+    <update id="modifyAcceptance" parameterType="acceptance">
+        update acceptance
+        set
+        date=#{date},
+        customer=#{customer},
+        name=#{name},
+        type=#{type},
+        has_file=#{has_file}
+        where id =#{id}
+    </update>
+
+    <select id="count" resultType="java.lang.Integer">
+        select count(1) from acceptance where id =#{id}
+    </select>
+
+    <delete id="delAcceptance" parameterType="java.lang.Integer">
+        delete from acceptance where id = #{id}
+    </delete>
+
+    <select id="findCount" resultType="java.lang.Integer">
+        select count(1) from
+        (select * from acceptance where date like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        select * from acceptance where customer like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        select * from acceptance where name like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        (select * from acceptance
+        <where>
+            <if test="query.fuzzy!=null and query.fuzzy!=''">
+                type like binary concat('%',#{query.fuzzy},'%')
+            </if>
+        </where>)
+        ) a
+    </select>
+
+    <select id="findList" resultType="acceptance">
+        select * from
+        (select * from acceptance where date like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        select * from acceptance where customer like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        select * from acceptance where name like binary concat('%',#{query.fuzzy},'%')
+        UNION
+        (select * from acceptance
+        <where>
+            <if test="query.fuzzy!=null and query.fuzzy!=''">
+                type like binary concat('%',#{query.fuzzy},'%')
+            </if>
+        </where>)
+        ) a
+        ORDER BY a.id
+        limit #{query.simplePage.start},#{query.simplePage.pageSize}
+    </select>
+
+    <select id="selectId" resultType="acceptance">
+        select * from acceptance where id = #{id}
+    </select>
+
+    <select id="selectAllAcceptance" resultType="acceptance">
+        select * from acceptance
+    </select>
+
+    <insert id="insertAcceptanceList">
+        insert into acceptance
+        (date,customer,name,type)
+        values
+        <foreach collection="data" item="item" separator=",">
+            (#{item.date},#{item.customer},#{item.name},#{item.type})
+        </foreach>
+    </insert>
+</mapper>

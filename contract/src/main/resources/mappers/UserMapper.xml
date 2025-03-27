@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--namespace 命名空间，绑定一个对应的 dao接口-->
+<mapper namespace="com.mind.contract.dao.UserDao">
+    <select id="queryUserByUsername" resultType="user">
+        select * from user where username = #{username}
+    </select>
+    <select id="getUserPermissions" resultType="java.lang.String">
+        select mu.perms  from user u inner join  sys_role role on u.id = role.role_id
+        inner join sys_role_menu mou on role.role_id = mou.role_id
+        inner join  sys_menu mu on mu.menu_id = mou.menu_id
+        where u.id = #{id}
+    </select>
+
+</mapper>
