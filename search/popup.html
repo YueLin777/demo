@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 400px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #status {
+      margin-top: 10px;
+      color: #666;
+    }
+    #savedData, #statsData {
+      margin-top: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      display: none;
+    }
+    .data-item {
+      border-bottom: 1px solid #eee;
+      padding: 8px 0;
+    }
+    .data-item:last-child {
+      border-bottom: none;
+    }
+    .stats-section {
+      margin-bottom: 15px;
+    }
+    .stats-section h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h2>网页信息存储助手</h2>
+  <button id="savePageInfo">保存当前页面信息</button>
+  <button id="viewSavedData">查看已保存数据</button>
+  <button id="viewStats">查看数据库统计</button>
+  <div id="status"></div>
+  <div id="savedData"></div>
+  <div id="statsData"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
